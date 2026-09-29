@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - solution_platform: x86
+            artifact_dir: Win32
+          - solution_platform: x64
+            artifact_dir: x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild (VS 2022)
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '17.0'
+
+      - name: Build Debug ${{ matrix.solution_platform }}
+        shell: pwsh
+        run: |
+          msbuild .\\pelauncher.sln /m /p:Configuration=Debug /p:Platform=${{ matrix.solution_platform }} /p:PreferredToolArchitecture=x64 /restore
+      - name: Upload artifact (Debug ${{ matrix.solution_platform }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: Debug-${{ matrix.solution_platform }}
+          path: |
+            build/Debug/${{ matrix.artifact_dir }}/
+            Debug/${{ matrix.artifact_dir }}/
